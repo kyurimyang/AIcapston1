@@ -6,8 +6,8 @@ AI융합캡스톤디자인1 (26-2) 6조
 ## 구조
 
 ```
-backend/    FastAPI (/health, /recognize, /narration, /ask)  — 규림
-frontend/   React + Vite + TypeScript                         — 혜진
+backend/    FastAPI (/health, /recognize, /narration, /ask)  
+frontend/   React + Vite + TypeScript                         
 train/      Colab 노트북, 학습 스크립트 (① ② ③)
 eval/       단계별·조건별 정확도 계산
 data/       git 제외. 받는 방법은 data/README.md
