@@ -16,51 +16,163 @@
     "license": "공공누리 제1유형(출처표시) + AI유형(인공지능 학습용)"
   },
   "C01": {
-    "era": "삼국시대",
+    "era": "삼국",
     "material": "금동",
-    "size": null,
+    "size": "28.6cm",
     "description": null,
-    "source_url": "https://www.heritage.go.kr/heri/cul/culSelectDetail.do?VdkVgwKey=11,01180000,11&pageNo=1_1_1_0",
-    "license": "공공누리 제4유형(출처표시·상업적 이용금지·변경금지) + AI유형(인공지능 학습용)"
-  },
-  "C02": {
-    "era": "삼국시대 7세기 중반",
-    "material": "금동",
-    "size": "높이 22.5cm",
-    "description": null,
-    "source_url": "https://www.metmuseum.org/art/collection/search/65397",
-    "license": "Met Open Access (CC0, 퍼블릭 도메인)"
-  },
-  "C03": {
-    "era": "삼국시대",
-    "material": "금동",
-    "size": "높이 17.1cm",
-    "description": null,
-    "source_url": "https://www.emuseum.go.kr/detail?relicId=PS0100100101200026500000",
+    "source_url": "https://www.emuseum.go.kr/detail?relicId=PS0100100100500232700000",
     "license": "공공누리 제1유형(출처표시)"
   },
-  "C04": {
-    "era": "삼국시대",
+  "C02": {
+    "era": "삼국",
     "material": "금동",
-    "size": "높이 26cm, 대좌너비 12cm",
+    "size": "20.9cm",
+    "description": null,
+    "source_url": "https://www.emuseum.go.kr/detail?relicId=PS0100100100500320000000",
+    "license": "공공누리 제1유형(출처표시)"
+  },
+  "C03": {
+    "era": "삼국",
+    "material": "금동",
+    "size": "11.5cm",
+    "description": null,
+    "source_url": "https://www.emuseum.go.kr/detail?relicId=PS0100100102400002200000",
+    "license": null
+  },
+  "C04": {
+    "era": "삼국",
+    "material": "금동",
+    "size": "26cm",
     "description": null,
     "source_url": "https://www.emuseum.go.kr/detail?relicId=PS0100100101100416500000",
     "license": "공공누리 제1유형(출처표시)"
   },
   "C05": {
-    "era": "삼국시대",
+    "era": "신라",
     "material": "금동",
-    "size": "높이 28.6cm",
+    "size": "15.3cm",
     "description": null,
-    "source_url": "https://www.emuseum.go.kr/detail?relicId=PS0100100100500232700000",
-    "license": "공공누리 제1유형(출처표시)"
+    "source_url": "https://www.emuseum.go.kr/detail?relicId=PS0100100100101394700000",
+    "license": null
   },
   "C06": {
-    "era": "삼국시대",
+    "era": "통일신라",
     "material": "금동",
-    "size": "높이 20.9cm",
+    "size": "23.5cm",
     "description": null,
-    "source_url": "https://www.emuseum.go.kr/detail?relicId=PS0100100100500320000000",
-    "license": "공공누리 제1유형(출처표시)"
+    "source_url": "https://www.emuseum.go.kr/detail?relicId=PS0100100100101294400000",
+    "license": null
+  },
+  "C07": {
+    "era": "조선",
+    "material": "금동",
+    "size": "10.8cm",
+    "description": null,
+    "source_url": "https://www.emuseum.go.kr/detail?relicId=PS0100100102400307000000",
+    "license": null
+  },
+  "C08": {
+    "era": "시대 미상",
+    "material": "금동",
+    "size": "8.4cm",
+    "description": null,
+    "source_url": "https://www.emuseum.go.kr/detail?relicId=PS0100100101100737500000",
+    "license": null
+  },
+  "C09": {
+    "era": "시대 미상",
+    "material": "금동",
+    "size": "12.1cm",
+    "description": null,
+    "source_url": "https://www.emuseum.go.kr/detail?relicId=PS0100100101700812600000",
+    "license": null
+  },
+  "C10": {
+    "era": "시대 미상",
+    "material": "동합금",
+    "size": "14.3cm",
+    "description": null,
+    "source_url": "https://www.emuseum.go.kr/detail?relicId=PS0100100100100674700000",
+    "license": null
+  },
+  "C11": {
+    "era": "시대 미상",
+    "material": "동",
+    "size": "14.2cm",
+    "description": null,
+    "source_url": "https://www.emuseum.go.kr/detail?relicId=PS0100100101700812500000",
+    "license": null
+  },
+  "C12": {
+    "era": "고구려",
+    "material": "금동",
+    "size": "15.2cm",
+    "description": null,
+    "source_url": "https://www.emuseum.go.kr/detail?relicId=PS0100100100500277200000",
+    "license": null
+  },
+  "C13": {
+    "era": "삼국",
+    "material": "금동",
+    "size": "20.3cm",
+    "description": null,
+    "source_url": "https://www.emuseum.go.kr/detail?relicId=PS0100100101100163700000",
+    "license": null
+  },
+  "C14": {
+    "era": "통일신라",
+    "material": "금동",
+    "size": "13.5cm",
+    "description": null,
+    "source_url": "https://www.emuseum.go.kr/detail?relicId=PS0100100101100412100000",
+    "license": null
+  },
+  "C15": {
+    "era": "고려",
+    "material": "금동",
+    "size": "38.5cm",
+    "description": null,
+    "source_url":"https://www.emuseum.go.kr/detail?relicId=PS0100100100500080100000",
+    "license": null
+  },
+  "C16": {
+    "era": "통일신라",
+    "material": "석",
+    "size": "125cm",
+    "description": null,
+    "source_url": "https://www.emuseum.go.kr/detail?relicId=PS0100100100101195900000",
+    "license": null
+  },
+  "C17": {
+    "era": "시대 미상",
+    "material": "철",
+    "size": "19.0cm",
+    "description": null,
+    "source_url":"https://www.emuseum.go.kr/detail?relicId=PS0100100102400307600000",
+    "license": null
+  },
+  "C18": {
+    "era": "고구려",
+    "material": "금동",
+    "size": "16.2cm",
+    "description": null,
+    "source_url": "https://www.emuseum.go.kr/detail?relicId=PS0100100101100085300000",
+    "license": null
+  },
+  "C19": {
+    "era": "백제",
+    "material": "활석",
+    "size": null,
+    "description": null,
+    "source_url": "https://www.emuseum.go.kr/detail?relicId=PS0100100100101478800000",
+    "license": null
+  },
+  "C20": {
+    "era": "시대 미상",
+    "material": "철",
+    "size": "20.8cm",
+    "description": null,
+    "source_url": "https://www.emuseum.go.kr/detail?relicId=PS0100100102400307400000",
+    "license": null
   }
 }

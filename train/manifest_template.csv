@@ -1,0 +1,4 @@
+artifact_id,name,material,license,source_url,split,path,source
+T001,금동관음보살입상 (예시),금동,공공누리 1유형,https://example.org/replace-me,train,train/T001/01.jpg,e뮤지엄
+T001,금동관음보살입상 (예시),금동,공공누리 1유형,https://example.org/replace-me,train,train/T001/02.jpg,e뮤지엄
+V001,석조보살상 (예시),석조,공공누리 1유형,https://example.org/replace-me,val,val/V001/01.jpg,e뮤지엄
