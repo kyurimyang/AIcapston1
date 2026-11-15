@@ -5,7 +5,7 @@ status 규칙 (임계값 T·M은 val로만 정한다)
 - uncertain: score >= T 이지만 1·2위가 비슷함
 - reject:    score < T
 
-단계는 환경변수 STAGE(기본 1)로 고른다: models/index_stage{N}.faiss
+단계는 환경변수 STAGE(기본 2, 시연 모델)로 고른다: models/index_stage{N}.faiss
 임계값은 models/thresholds_stage{N}.json ({"T": ..., "M": ...}). 파일이 없으면 T=M=0이라
 reject·uncertain이 나오지 않는다. val로 정하기 전의 임시 상태다.
 """
@@ -28,7 +28,7 @@ DB_PATH = ROOT / "data" / "artifacts.db"
 
 MODEL_NAME = "ViT-B-16-quickgelu"  # openai 가중치는 QuickGELU 구조
 PRETRAINED = "openai"
-STAGE = int(os.getenv("STAGE", "1"))
+STAGE = int(os.getenv("STAGE", "2"))  # 시연 모델은 ② (eval/results_stage_comparison.md)
 
 MESSAGES = {
     "uncertain": "반가사유상 종류로 보여요. 조금 더 가까이에서 다시 찍어 주세요",
@@ -114,3 +114,19 @@ def recognize(image_bytes: bytes) -> dict:
 def _ckpt() -> str | None:
     p = MODELS / f"ckpt_stage{STAGE}.pt"
     return str(p) if p.exists() else None
+
+
+def warmup() -> dict:
+    """서버 시작 시 인덱스·CLIP·체크포인트를 미리 올리고 더미 이미지로 한 번 추론한다.
+
+    첫 /recognize 요청이 모델 로딩까지 떠안으면 프론트 타임아웃(5초)을 넘길 수 있다.
+    """
+    index, ids, T, M = _stage()
+    ckpt = _ckpt()
+    if STAGE > 1 and ckpt is None:
+        print(f"[경고] ckpt_stage{STAGE}.pt가 없어 사전학습 가중치로 임베딩합니다 (인덱스와 불일치)")
+    if T == 0 and M == 0:
+        print(f"[경고] thresholds_stage{STAGE}.json이 없어 reject·uncertain이 나오지 않습니다")
+    embed([Image.new("RGB", (224, 224))], ckpt=ckpt)
+    return {"stage": STAGE, "vectors": index.ntotal, "artifacts": len(set(ids)),
+            "T": T, "M": M, "ckpt": ckpt is not None}

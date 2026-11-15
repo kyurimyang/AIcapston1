@@ -1,14 +1,37 @@
 import json
+import time
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Literal
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from dotenv import load_dotenv
 
-from . import rag, recognize
+# recognize가 import 시점에 STAGE를 읽으므로 그보다 먼저 레포 루트의 .env를 읽는다
+load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
-app = FastAPI(title="유담 YU:DAM")
+from fastapi import FastAPI, File, HTTPException, UploadFile  # noqa: E402
+from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
+from pydantic import BaseModel  # noqa: E402
+
+from . import rag, recognize  # noqa: E402
+
+WARMUP: dict = {}
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    # 첫 요청이 모델 로딩을 떠안지 않도록 시작할 때 미리 올린다
+    t = time.perf_counter()
+    try:
+        WARMUP.update(recognize.warmup(), seconds=round(time.perf_counter() - t, 1))
+        print(f"[warmup] {WARMUP}")
+    except Exception as e:  # 인덱스가 없어도 /health로 원인을 볼 수 있게 서버는 띄운다
+        WARMUP.update(error=f"{type(e).__name__}: {e}")
+        print(f"[warmup 실패] {WARMUP['error']}")
+    yield
+
+
+app = FastAPI(title="유담 YU:DAM", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # 시연용. ngrok 주소가 매번 바뀐다
@@ -49,7 +72,7 @@ class AskResponse(BaseModel):
 
 @app.get("/health")
 def health():
-    return {"ok": True}
+    return {"ok": "error" not in WARMUP, **WARMUP}
 
 
 @app.post("/recognize", response_model=RecognizeResponse)
