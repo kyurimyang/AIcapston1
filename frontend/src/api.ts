@@ -14,7 +14,9 @@ export interface RecognizeResult {
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const call = async () => {
-    const res = await fetch(`${BASE}${path}`, { ...init, signal: AbortSignal.timeout(5000) });
+    // ngrok 무료 플랜의 브라우저 경고 페이지를 건너뛴다 (없으면 fetch가 HTML을 받는다)
+    const headers = { ...(init?.headers as Record<string, string>), "ngrok-skip-browser-warning": "1" };
+    const res = await fetch(`${BASE}${path}`, { ...init, headers, signal: AbortSignal.timeout(5000) });
     if (!res.ok) throw new Error(String(res.status));
     return (await res.json()) as T;
   };

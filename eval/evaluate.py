@@ -32,12 +32,13 @@ def main(stage: int) -> None:
     vecs = embed([load_image(test_dir / r["path"]) for r in rows], ckpt=str(ckpt) if ckpt.exists() else None)
 
     hit1, hit3 = defaultdict(list), defaultdict(list)
-    ab_hits, none_scores, confusions = [], [], []
+    ab_hits, none_scores, confusions, ab_scores = [], [], [], []
     for r, v in zip(rows, vecs):
         ranked = search(index, ids, v[None])
         top3 = [a for a, _ in ranked[:3]]
         label = r["label"]
         if label in LABEL_TO_ID:
+            ab_scores.append(ranked[0][1])
             ok1, ok3 = top3[0] == LABEL_TO_ID[label], LABEL_TO_ID[label] in top3
             for key in ("전체", r["condition"]):
                 hit1[key].append(ok1)
@@ -60,6 +61,9 @@ def main(stage: int) -> None:
     if th:
         rej = sum(judge([("x", x)], th["T"], th["M"]) == "reject" for x in none_scores)
         print(f"none 중 reject {rej}/{len(s)} (오인식률 {1 - rej / len(s):.1%}, T={th['T']})")
+    if th:
+        lost = sum(x < th["T"] for x in ab_scores)
+        print(f"A/B {len(ab_scores)}장 중 T 미만으로 reject: {lost}장 ({lost / len(ab_scores):.1%})")
     print(f"\n오답 {len(confusions)}장 (파일, 1위, 점수):")
     for c in confusions:
         print("  ", *c)
