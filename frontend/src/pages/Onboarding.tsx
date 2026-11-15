@@ -14,7 +14,7 @@ export default function Onboarding({ go }: { go: (path: string) => void }) {
   const { saveSettings } = useApp();
   const [profile, setProfile] = useState<Profile | null>(null);
 
-  useEffect(() => speak("유담입니다. 시각 경험을 골라 주세요"), []);
+  useEffect(() => { speak("유담입니다. 시각 경험을 골라 주세요"); }, []);
 
   const choose = (length: Length) => {
     if (!profile) return;
