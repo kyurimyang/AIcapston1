@@ -16,7 +16,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-NARRATIONS_PATH = Path(__file__).resolve().parents[2] / "data" / "narrations.json"
+# 해설 텍스트는 얼굴·라이선스 문제가 없어 git으로 관리한다 (docs/narration_guide.md)
+NARRATIONS_PATH = Path(__file__).resolve().parents[1] / "scripts" / "narrations.json"
 
 Profile = Literal["congenital", "acquired", "low_vision"]
 Length = Literal["short", "long"]
