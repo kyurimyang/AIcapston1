@@ -16,6 +16,7 @@ export default function Ask({ go }: { go: (path: string) => void }) {
   const [asked, setAsked] = useState(""); // 마지막으로 보낸 질문
   const [answer, setAnswer] = useState("");
   const [sources, setSources] = useState<string[]>([]);
+  const [typing, setTyping] = useState(!voice); // 입력창은 "글로 질문하기"를 눌러야 열린다 (음성 인식이 없으면 처음부터)
 
   useEffect(() => {
     speak(voice ? "질문하기 버튼을 누르고 궁금한 점을 말해 주세요" : "질문을 입력해 주세요");
@@ -47,37 +48,49 @@ export default function Ask({ go }: { go: (path: string) => void }) {
       if (q) return await submit(q);
       speak("잘 못 들었어요. 다시 눌러 주세요");
     } catch {
+      setTyping(true);
       speak("마이크를 쓸 수 없어요. 아래 입력창에 질문을 적어 주세요");
     }
     setPhase("idle");
   };
 
-  const label = { idle: "질문하기", listening: "듣고 있어요", thinking: "찾아보고 있어요" }[phase];
+  const label = { idle: answer ? "다시 질문하기" : "질문하기", listening: "듣고 있어요", thinking: "찾아보고 있어요" }[phase];
 
   return (
-    <main>
+    <main className="fill">
       <PageTitle>질문하기</PageTitle>
       {voice && (
-        <button className="big" aria-label="질문 말하기" onClick={talk} disabled={phase !== "idle"}>
+        // 답변이 나오면 버튼을 줄이고 남는 공간을 답변에 준다
+        <button className={answer ? "talk talk-small" : "talk"} aria-label="질문 말하기" onClick={talk} disabled={phase !== "idle"}>
           {label}
         </button>
       )}
-      {asked && <p>질문: {asked}</p>}
-      <p aria-live="polite">{answer}</p>
-      {sources.length > 0 && <p>근거: {sources.join(", ")}</p>}
-      {answer && <button aria-label="답변 다시 듣기" onClick={() => speak(answer)}>답변 다시 듣기</button>}
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          submit(question);
-          setQuestion("");
-        }}
-      >
-        <input aria-label="질문 입력" value={question} onChange={(e) => setQuestion(e.target.value)} />
-        <button aria-label="질문 보내기" type="submit" disabled={phase !== "idle"}>보내기</button>
-      </form>
-      <button aria-label="해설로 돌아가기" onClick={() => go("/narration")}>해설로 돌아가기</button>
-      <button aria-label="다시 촬영하기" onClick={() => go("/capture")}>다시 찍기</button>
+      {answer && (
+        <section className="answer" aria-label="답변">
+          <small>질문: {asked}</small>
+          <p aria-live="polite">{answer}</p>
+          {sources.length > 0 && <small>근거: {sources.join(", ")}</small>}
+        </section>
+      )}
+      {answer && <button className="secondary" aria-label="답변 다시 듣기" onClick={() => speak(answer)}>답변 다시 듣기</button>}
+      {typing ? (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            submit(question);
+            setQuestion("");
+          }}
+        >
+          <input aria-label="질문 입력" placeholder="예: 손 모양 더 알려줘" value={question} onChange={(e) => setQuestion(e.target.value)} />
+          <button aria-label="질문 보내기" type="submit" disabled={phase !== "idle"}>보내기</button>
+        </form>
+      ) : (
+        <button className="secondary" onClick={() => setTyping(true)}>글로 질문하기</button>
+      )}
+      <div className="row">
+        <button className="secondary" aria-label="해설로 돌아가기" onClick={() => go("/narration")}>해설로</button>
+        <button className="secondary" aria-label="다시 촬영하기" onClick={() => go("/capture")}>다시 찍기</button>
+      </div>
     </main>
   );
 }
