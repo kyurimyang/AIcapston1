@@ -1,48 +1,105 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { recognize } from "../api";
 import { useApp } from "../AppContext";
 import { PageTitle } from "../components/PageTitle";
+import { captureFrame, resizeFile } from "../image";
 import { speak } from "../speech";
 
-// TODO(혜진): getUserMedia 전체 화면 미리보기 + 하단 절반 촬영 버튼,
-// 전송 전 긴 변 512~768px로 리사이즈
+const FALLBACK = {
+  uncertain: "반가사유상 종류로 보여요. 조금 더 가까이에서 다시 찍어 주세요",
+  reject: "유물을 찾지 못했어요. 정면에서 다시 찍어 주세요",
+};
+
+type Camera = "starting" | "on" | "off";
+
+// 화면 전체가 카메라 미리보기, 아래 절반 전체가 촬영 버튼 (보지 않고도 누를 수 있게)
 export default function Capture({ go }: { go: (path: string) => void }) {
   const { setResult } = useApp();
+  const video = useRef<HTMLVideoElement>(null);
+  const [camera, setCamera] = useState<Camera>("starting");
+  const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
 
-  const onFile = async (file: File) => {
+  useEffect(() => {
+    let stream: MediaStream | null = null;
+    let cancelled = false;
+    const noCamera = () => {
+      setCamera("off");
+      speak("카메라를 쓸 수 없어요. 사진 올리기 버튼을 눌러 주세요");
+    };
+    // HTTPS가 아니면(ngrok 없이 접속) mediaDevices 자체가 없다
+    if (!navigator.mediaDevices?.getUserMedia) noCamera();
+    else
+      navigator.mediaDevices
+        .getUserMedia({ video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 } }, audio: false })
+        .then((s) => {
+          if (cancelled) return s.getTracks().forEach((t) => t.stop());
+          stream = s;
+          if (video.current) video.current.srcObject = s;
+          setCamera("on");
+          speak("화면 아래쪽 절반을 누르면 촬영해요");
+        })
+        .catch(() => !cancelled && noCamera());
+    return () => {
+      cancelled = true;
+      stream?.getTracks().forEach((t) => t.stop()); // 다른 화면으로 가면 카메라를 끈다
+    };
+  }, []);
+
+  const send = async (getImage: () => Promise<Blob>) => {
+    if (busy) return;
+    setBusy(true);
+    navigator.vibrate?.(50);
     setStatus("확인하고 있어요");
     speak("확인하고 있어요");
+    const t0 = performance.now();
     try {
-      const r = await recognize(file);
+      const r = await recognize(await getImage());
+      console.info(`[timing] /recognize ${Math.round(performance.now() - t0)}ms`, r.status, r.score);
       setResult(r);
       if (r.status === "ok") return go("/narration");
-      const msg =
-        r.status === "uncertain"
-          ? "반가사유상 종류로 보여요. 조금 더 가까이에서 다시 찍어 주세요"
-          : "유물을 찾지 못했어요. 정면에서 다시 찍어 주세요";
+      const msg = r.message ?? FALLBACK[r.status];
       setStatus(msg);
       speak(msg);
     } catch {
-      setStatus("연결이 불안정해요. 다시 시도해 주세요");
-      speak("연결이 불안정해요. 다시 시도해 주세요");
+      const msg = "연결이 불안정해요. 다시 시도해 주세요";
+      setStatus(msg);
+      speak(msg);
+    } finally {
+      setBusy(false);
     }
   };
 
+  const shoot = () => video.current && video.current.videoWidth > 0 && send(() => captureFrame(video.current!));
+
   return (
-    <main>
-      <PageTitle>유물 촬영</PageTitle>
-      <label>
-        이미지 업로드
-        <input
-          type="file"
-          accept="image/*"
-          capture="environment"
-          onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])}
-        />
-      </label>
-      <button aria-label="설정 바꾸기" onClick={() => go("/onboarding")}>설정 바꾸기</button>
-      <div aria-live="polite">{status}</div>
+    <main className="capture">
+      <video ref={video} className="capture-preview" autoPlay playsInline muted aria-hidden="true" />
+      <div className="capture-top">
+        <PageTitle>유물 촬영</PageTitle>
+        <div aria-live="polite">{status}</div>
+        <button aria-label="설정 바꾸기" onClick={() => go("/onboarding")}>설정 바꾸기</button>
+        {camera === "off" && (
+          <label className="upload">
+            사진 올리기
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                e.target.value = ""; // 같은 사진을 다시 골라도 onChange가 오게
+                if (f) send(() => resizeFile(f));
+              }}
+            />
+          </label>
+        )}
+      </div>
+      {camera === "on" && (
+        <button className="capture-shoot" aria-label="유물 촬영하기" onClick={shoot} disabled={busy}>
+          {busy ? "확인 중…" : "촬영"}
+        </button>
+      )}
     </main>
   );
 }
