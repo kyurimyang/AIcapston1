@@ -1,0 +1,53 @@
+@startuml usecase
+' 유담 YU:DAM 유스케이스 다이어그램 (usecase.svg / usecase.png와 같은 내용)
+' 렌더링: https://www.plantuml.com/plantuml 또는 VS Code PlantUML 확장
+left to right direction
+skinparam actorStyle stick
+skinparam usecase { BackgroundColor #FFF8E6 BorderColor #333 }
+
+actor "시각장애 관람객" as Visitor
+actor "선천 전맹" as Congenital
+actor "후천 전맹" as Acquired
+actor "저시력" as LowVision
+Congenital -|> Visitor
+Acquired -|> Visitor
+LowVision -|> Visitor
+
+actor "LLM 서비스\n<<외부 시스템>>" as LLM
+actor "운영팀\n(규림·혜진)" as Team
+
+rectangle "유담 YU:DAM (모바일 웹)" {
+  usecase "프로필·해설 길이 설정" as UC_Profile
+  usecase "유물 촬영" as UC_Shoot
+  usecase "사진 올리기" as UC_Upload
+  usecase "유물 식별" as UC_Identify
+  usecase "재촬영 안내 받기" as UC_Retake
+  usecase "맞춤 해설 듣기" as UC_Narr
+  usecase "해설 속도 조절" as UC_Speed
+  usecase "추가 질문하기 (음성)" as UC_Ask
+  usecase "근거 기반 답변 듣기" as UC_Answer
+  usecase "글로 질문하기" as UC_Text
+
+  usecase "해설 생성·검수" as UC_Review
+  usecase "유물 정보 등록" as UC_Meta
+  usecase "인식 모델 학습·임계값 설정" as UC_Train
+}
+
+Visitor -- UC_Profile
+Visitor -- UC_Shoot
+Visitor -- UC_Narr
+Visitor -- UC_Ask
+
+UC_Shoot ..> UC_Identify : <<include>>
+UC_Upload ..> UC_Shoot : <<extend>>\n[카메라 사용 불가]
+UC_Retake ..> UC_Identify : <<extend>>\n[확신 낮음·유물 없음]
+UC_Speed ..> UC_Narr : <<extend>>
+UC_Ask ..> UC_Answer : <<include>>
+UC_Text ..> UC_Ask : <<extend>>\n[음성 인식 불가]
+
+UC_Answer -- LLM
+UC_Review -- LLM
+Team -- UC_Review
+Team -- UC_Meta
+Team -- UC_Train
+@enduml
