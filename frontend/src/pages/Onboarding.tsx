@@ -34,7 +34,7 @@ export default function Onboarding({ go }: { go: (path: string) => void }) {
   const l = LENGTHS.find((x) => x.value === length)!;
 
   return (
-    <main>
+    <main className="onboarding">
       <PageTitle>평소 어떻게 보이시나요?</PageTitle>
 
       <fieldset className="choices">
@@ -63,10 +63,9 @@ export default function Onboarding({ go }: { go: (path: string) => void }) {
         ))}
       </fieldset>
 
-      <div className="summary" aria-live="polite">
-        <small>내 맞춤 설정</small>
-        <strong>{p ? `${p.label} · ${l.label} 듣기` : "시각 경험을 골라 주세요"}</strong>
-      </div>
+      <p className="summary" aria-live="polite">
+        {p ? `내 설정: ${p.label} · ${l.label} 듣기` : "시각 경험을 골라 주세요"}
+      </p>
 
       <button onClick={start} disabled={!profile}>시작하기</button>
     </main>
