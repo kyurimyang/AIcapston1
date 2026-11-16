@@ -11,9 +11,6 @@ const FALLBACK = {
   reject: "유물을 찾지 못했어요. 유물 쪽으로 몸을 돌리고, 폰을 가슴 높이에 들고 다시 찍어 주세요",
 };
 
-const BURST_COUNT = 4;
-const BURST_GAP_MS = 300;
-
 type Camera = "starting" | "on" | "off";
 
 // 화면 전체가 카메라 미리보기, 아래 절반 전체가 촬영 버튼 (보지 않고도 누를 수 있게)
@@ -50,20 +47,15 @@ export default function Capture({ go }: { go: (path: string) => void }) {
     };
   }, []);
 
-  const send = async (getImages: () => Promise<Blob[]>, announce?: string) => {
+  const send = async (getImage: () => Promise<Blob>) => {
     if (busy) return;
     setBusy(true);
     navigator.vibrate?.(50);
-    if (announce) {
-      setStatus(announce);
-      speak(announce);
-    }
+    setStatus("확인하고 있어요");
+    speak("확인하고 있어요");
     const t0 = performance.now();
     try {
-      const images = await getImages();
-      setStatus("확인하고 있어요");
-      speak("확인하고 있어요");
-      const r = await recognize(images);
+      const r = await recognize(await getImage());
       console.info(`[timing] /recognize ${Math.round(performance.now() - t0)}ms`, r.status, r.score);
       setResult(r);
       if (r.status === "ok") return go("/narration");
@@ -79,18 +71,7 @@ export default function Capture({ go }: { go: (path: string) => void }) {
     }
   };
 
-  // 한 번 누르면 약 1초 동안 여러 장을 찍는다. 사용자는 구도를 맞출 필요 없이 폰만 천천히 움직인다.
-  const burst = async () => {
-    const frames: Blob[] = [];
-    for (let i = 0; i < BURST_COUNT; i++) {
-      if (i > 0) await new Promise((r) => setTimeout(r, BURST_GAP_MS));
-      frames.push(await captureFrame(video.current!));
-    }
-    navigator.vibrate?.(50);
-    return frames;
-  };
-  const shoot = () =>
-    video.current && video.current.videoWidth > 0 && send(burst, "천천히 좌우로 움직여 주세요");
+  const shoot = () => video.current && video.current.videoWidth > 0 && send(() => captureFrame(video.current!));
 
   return (
     <main className="capture">
@@ -109,7 +90,7 @@ export default function Capture({ go }: { go: (path: string) => void }) {
               onChange={(e) => {
                 const f = e.target.files?.[0];
                 e.target.value = ""; // 같은 사진을 다시 골라도 onChange가 오게
-                if (f) send(async () => [await resizeFile(f)]);
+                if (f) send(() => resizeFile(f));
               }}
             />
           </label>

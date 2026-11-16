@@ -28,9 +28,9 @@ async function request<T>(path: string, init?: RequestInit, timeoutMs = 5000): P
   }
 }
 
-export function recognize(images: Blob[]) {
+export function recognize(image: Blob) {
   const form = new FormData();
-  images.forEach((b, i) => form.append("images", b, `photo${i}.jpg`));
+  form.append("image", image, "photo.jpg");
   return request<RecognizeResult>("/recognize", { method: "POST", body: form });
 }
 
