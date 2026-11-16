@@ -77,8 +77,14 @@ def health():
 
 
 @app.post("/recognize", response_model=RecognizeResponse)
-async def recognize_image(image: UploadFile = File(...)):
-    return recognize.recognize(await image.read())
+async def recognize_image(
+    image: UploadFile | None = File(None),  # 기존 단일 사진 (호환 유지)
+    images: list[UploadFile] = File(default=[]),  # 연속 촬영한 여러 장
+):
+    files = ([image] if image else []) + images
+    if not files:
+        raise HTTPException(422, "image 또는 images가 필요해요")
+    return recognize.recognize_many([await f.read() for f in files[:8]])
 
 
 @app.get("/narration", response_model=NarrationResponse)

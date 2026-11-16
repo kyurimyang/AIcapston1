@@ -31,8 +31,9 @@ PRETRAINED = "openai"
 STAGE = int(os.getenv("STAGE", "2"))  # 시연 모델은 ② (eval/results_stage_comparison.md)
 
 MESSAGES = {
-    "uncertain": "반가사유상 종류로 보여요. 조금 더 가까이에서 다시 찍어 주세요",
-    "reject": "유물을 찾지 못했어요. 정면에서 다시 찍어 주세요",
+    # 화면을 못 봐도 따라 할 수 있게, 몸의 동작으로 안내한다
+    "uncertain": "반가사유상 종류로 보여요. 한 걸음 앞으로 다가가 주세요. 폰을 두 손으로 가슴 높이에 잡고 다시 찍어 주세요",
+    "reject": "유물을 찾지 못했어요. 유물 쪽으로 몸을 돌리고, 폰을 가슴 높이에 들고 다시 찍어 주세요",
 }
 
 
@@ -96,8 +97,20 @@ def _name(artifact_id: str) -> str | None:
 
 
 def recognize(image_bytes: bytes) -> dict:
+    return recognize_many([image_bytes])
+
+
+def recognize_many(images: list[bytes]) -> dict:
+    """여러 프레임의 임베딩을 평균해서 한 번에 판단한다.
+
+    흔들림·가림처럼 프레임 하나가 우연히 나쁜 경우를 줄이려는 추론 규칙이다 (학습 변경 아님).
+    평균 후 다시 L2 정규화하므로 T·M(단일 사진 val 기준)과 같은 코사인 척도다.
+    """
     index, ids, T, M = _stage()
-    ranked = search(index, ids, embed([load_image(image_bytes)], ckpt=_ckpt()))
+    vecs = embed([load_image(b) for b in images], ckpt=_ckpt())
+    mean = vecs.mean(axis=0, keepdims=True)
+    mean /= np.linalg.norm(mean, axis=1, keepdims=True)
+    ranked = search(index, ids, mean.astype("float32"))
     status = judge(ranked, T, M)
     top_id, score = ranked[0]
     if status == "reject":
