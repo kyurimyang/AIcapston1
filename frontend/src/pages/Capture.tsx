@@ -5,9 +5,10 @@ import { PageTitle } from "../components/PageTitle";
 import { captureFrame, resizeFile } from "../image";
 import { speak } from "../speech";
 
+// 서버 message가 없을 때의 대체 문구. 화면을 못 봐도 따라 할 수 있는 몸의 동작으로 안내한다
 const FALLBACK = {
-  uncertain: "반가사유상 종류로 보여요. 조금 더 가까이에서 다시 찍어 주세요",
-  reject: "유물을 찾지 못했어요. 정면에서 다시 찍어 주세요",
+  uncertain: "반가사유상 종류로 보여요. 한 걸음 앞으로 다가가 주세요. 폰을 두 손으로 가슴 높이에 잡고 다시 찍어 주세요",
+  reject: "유물을 찾지 못했어요. 유물 쪽으로 몸을 돌리고, 폰을 가슴 높이에 들고 다시 찍어 주세요",
 };
 
 type Camera = "starting" | "on" | "off";
