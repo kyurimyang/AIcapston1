@@ -119,3 +119,8 @@ main.onboarding fieldset.choices legend { font-size: 18px; margin-bottom: 8px; }
   border-radius: 12px;
 }
 .upload input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+
+/* 자주 묻는 질문: 한 줄짜리 작은 버튼 목록 */
+.faq { display: flex; flex-direction: column; gap: 8px; }
+.faq h2 { margin: 0; font-size: 20px; opacity: 0.8; }
+.faq button { min-height: 52px; font-size: 20px; text-align: left; padding: 0 16px; }
