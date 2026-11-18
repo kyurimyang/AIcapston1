@@ -31,7 +31,10 @@ npm install
 npm run dev
 ```
 
-시연: `ngrok http 8000` 후 나온 주소를 `frontend/.env`의 `VITE_API_BASE_URL`에 넣는다. 카메라는 HTTPS가 필요하다.
+시연 (폰): 백엔드(8000)와 프론트(`npm run dev`, 5173)를 켠 뒤 **`ngrok http 5173` 하나만** 연다. 폰 크롬에서 ngrok이 준 `https://…` 주소를 열면 된다.
+- 카메라는 HTTPS 페이지에서만 켜진다. 그래서 백엔드가 아니라 프론트를 ngrok으로 연다.
+- API는 프론트 서버가 `/api` → `localhost:8000`으로 넘긴다 (`frontend/vite.config.ts`). ngrok 주소가 바뀌어도 설정을 고칠 필요가 없다.
+- `frontend/.env`의 `VITE_API_BASE_URL`은 비워 둔다 (백엔드를 다른 곳에서 따로 열 때만 쓴다).
 
 ## 규칙
 
