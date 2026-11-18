@@ -14,7 +14,7 @@ export interface RecognizeResult {
 }
 
 // /ask는 LLM 호출이 있어 길게 기다린다 (백엔드 LLM_TIMEOUT 8초 + 여유)
-async function request<T>(path: string, init?: RequestInit, timeoutMs = 5000): Promise<T> {
+async function request<T>(path: string, init?: RequestInit, timeoutMs = 5000, retry = true): Promise<T> {
   const call = async () => {
     // ngrok 무료 플랜의 브라우저 경고 페이지를 건너뛴다 (없으면 fetch가 HTML을 받는다)
     const headers = { ...(init?.headers as Record<string, string>), "ngrok-skip-browser-warning": "1" };
@@ -24,7 +24,8 @@ async function request<T>(path: string, init?: RequestInit, timeoutMs = 5000): P
   };
   try {
     return await call();
-  } catch {
+  } catch (e) {
+    if (!retry) throw e;
     return await call(); // 타임아웃·연결 실패 시 1회 자동 재시도
   }
 }
@@ -45,5 +46,5 @@ export function ask(artifactId: string, profile: Profile, question: string) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ artifact_id: artifactId, profile, question }),
-  }, 15000);
+  }, 15000, false); // 재시도하면 LLM을 두 번 불러 최악 30초 무음이 된다
 }
