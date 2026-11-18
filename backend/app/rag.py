@@ -7,12 +7,15 @@ LLM은 근거 문단 번호를 함께 돌려주고, 근거가 없으면 grounded
 - LLM_PROVIDER: openai | anthropic | gemini
 - LLM_API_KEY, LLM_MODEL: 해당 회사의 키와 모델 이름
 - LLM_TIMEOUT: 초 (기본 8). 프론트 /ask 타임아웃(15초)보다 짧게 둔다.
+- LLM_REASONING_EFFORT: OpenAI 추론 모델의 생각 양 (예: none, low). 비우면 보내지 않는다.
+  추론 모델은 temperature를 받지 않을 수 있어 OpenAI에는 temperature를 보내지 않는다.
 키가 없거나 호출이 실패해도 서버는 죽지 않고 "자료에 없는 내용이에요"로 답한다.
 """
 import json
 import os
 import re
 import sqlite3
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -72,8 +75,11 @@ def build_prompt(paras: list[str], profile: str, question: str) -> tuple[str, st
 def _post(url: str, headers: dict, body: dict, timeout: float) -> dict:
     req = urllib.request.Request(url, data=json.dumps(body).encode(), method="POST",
                                  headers={"Content-Type": "application/json", **headers})
-    with urllib.request.urlopen(req, timeout=timeout) as r:
-        return json.loads(r.read())
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            return json.loads(r.read())
+    except urllib.error.HTTPError as e:  # 400 등은 본문에 이유(모르는 파라미터, 잘못된 모델명)가 있다
+        raise RuntimeError(f"HTTP {e.code}: {e.read().decode(errors='replace')[:300]}") from None
 
 
 def call_llm(system: str, user: str) -> str:
@@ -84,10 +90,14 @@ def call_llm(system: str, user: str) -> str:
         raise RuntimeError("LLM_PROVIDER, LLM_API_KEY, LLM_MODEL을 .env에 채워 주세요")
 
     if provider == "openai":
-        r = _post("https://api.openai.com/v1/chat/completions", {"Authorization": f"Bearer {key}"}, {
-            "model": model, "temperature": 0, "response_format": {"type": "json_object"},
+        body = {
+            "model": model, "response_format": {"type": "json_object"},
             "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
-        }, timeout)
+        }
+        effort = os.getenv("LLM_REASONING_EFFORT", "").strip()
+        if effort:  # 근거 문단에서 찾아 답하는 일이라 깊이 생각할 필요가 없다 (none/low가 빠르다)
+            body["reasoning_effort"] = effort
+        r = _post("https://api.openai.com/v1/chat/completions", {"Authorization": f"Bearer {key}"}, body, timeout)
         return r["choices"][0]["message"]["content"]
     if provider == "anthropic":
         r = _post("https://api.anthropic.com/v1/messages",
