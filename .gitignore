@@ -5,6 +5,7 @@ data/*
 !data/README.md
 models/*
 !models/.gitkeep
+!models/README.md
 
 # 비밀 키
 .env
