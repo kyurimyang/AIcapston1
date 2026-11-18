@@ -1,5 +1,6 @@
 // API 호출은 이 파일에만 모은다. 형식은 CLAUDE.md 6장 기준.
-const BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
+// 기본은 같은 주소의 /api (vite.config.ts 프록시가 백엔드로 넘김). 백엔드를 따로 열 때만 VITE_API_BASE_URL을 쓴다
+const BASE = import.meta.env.VITE_API_BASE_URL || "/api";
 
 export type Profile = "congenital" | "acquired" | "low_vision";
 export type Length = "short" | "long";
