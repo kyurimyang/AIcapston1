@@ -16,12 +16,12 @@ export function setRate(rate: number) {
 }
 
 /** 읽기가 끝나면(또는 취소·오류 시) resolve된다. 기다릴 필요가 없으면 결과를 무시하면 된다. */
-export function speak(text: string): Promise<void> {
+export function speak(text: string, rate = getRate()): Promise<void> {
   speechSynthesis.cancel();
   return new Promise((resolve) => {
     const u = new SpeechSynthesisUtterance(text);
     u.lang = "ko-KR";
-    u.rate = getRate();
+    u.rate = rate;
     u.onend = () => resolve();
     u.onerror = () => resolve();
     speechSynthesis.speak(u);

@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { recognize } from "../api";
 import { useApp } from "../AppContext";
-import { PageTitle } from "../components/PageTitle";
+import { Icon } from "../components/Icon";
+import { TopBar } from "../components/TopBar";
 import { captureFrame, resizeFile } from "../image";
 import { speak } from "../speech";
 
@@ -10,22 +11,29 @@ const FALLBACK = {
   uncertain: "반가사유상 종류로 보여요. 한 걸음 앞으로 다가가 주세요. 폰을 두 손으로 가슴 높이에 잡고 다시 찍어 주세요",
   reject: "유물을 찾지 못했어요. 유물 쪽으로 몸을 돌리고, 폰을 가슴 높이에 들고 다시 찍어 주세요",
 };
+const READY = "폰을 가슴 높이에 들고 유물 쪽을 향해 주세요";
+
+// 진동으로도 결과를 알린다: 찰칵 짧게 1번, 찾으면 짧게 2번, 다시 찍어야 하면 길게 1번
+const BUZZ = { shoot: 50, ok: [80, 80, 80], retry: 400 };
 
 type Camera = "starting" | "on" | "off";
 
-// 화면 전체가 카메라 미리보기, 아래 절반 전체가 촬영 버튼 (보지 않고도 누를 수 있게)
+// 슬라이드 14쪽 ② 촬영 가이드: 미리보기 위에 가이드 틀, 아래에 안내 카드와 셔터.
+// 셔터는 보지 않고도 누를 수 있게 화면 아래쪽 전체가 버튼이다 (가운데 동그라미는 표시용).
+// 방향 안내("조금 왼쪽으로")와 자동 촬영은 하지 않는다: 유물 위치를 찾는 기능(객체 탐지)이 없다.
 export default function Capture({ go }: { go: (path: string) => void }) {
-  const { setResult } = useApp();
+  const { setResult, setPhoto } = useApp();
   const video = useRef<HTMLVideoElement>(null);
   const [camera, setCamera] = useState<Camera>("starting");
   const [busy, setBusy] = useState(false);
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState(READY);
 
   useEffect(() => {
     let stream: MediaStream | null = null;
     let cancelled = false;
     const noCamera = () => {
       setCamera("off");
+      setStatus("카메라를 쓸 수 없어요. 사진 올리기를 눌러 주세요");
       speak("카메라를 쓸 수 없어요. 사진 올리기 버튼을 눌러 주세요");
     };
     // HTTPS가 아니면(ngrok 없이 접속) mediaDevices 자체가 없다
@@ -38,7 +46,7 @@ export default function Capture({ go }: { go: (path: string) => void }) {
           stream = s;
           if (video.current) video.current.srcObject = s;
           setCamera("on");
-          speak("화면 아래쪽 절반을 누르면 촬영해요");
+          speak(`${READY}. 화면 아래쪽 절반을 누르면 촬영해요`);
         })
         .catch(() => !cancelled && noCamera());
     return () => {
@@ -50,15 +58,21 @@ export default function Capture({ go }: { go: (path: string) => void }) {
   const send = async (getImage: () => Promise<Blob>) => {
     if (busy) return;
     setBusy(true);
-    navigator.vibrate?.(50);
+    navigator.vibrate?.(BUZZ.shoot);
     setStatus("확인하고 있어요");
     speak("확인하고 있어요");
     const t0 = performance.now();
     try {
-      const r = await recognize(await getImage());
+      const image = await getImage();
+      const r = await recognize(image);
       console.info(`[timing] /recognize ${Math.round(performance.now() - t0)}ms`, r.status, r.score);
       setResult(r);
-      if (r.status === "ok") return go("/narration");
+      if (r.status === "ok") {
+        navigator.vibrate?.(BUZZ.ok);
+        setPhoto(image); // 해설 화면 썸네일 (서버에 저장하지 않는다)
+        return go("/narration");
+      }
+      navigator.vibrate?.(BUZZ.retry);
       const msg = r.message ?? FALLBACK[r.status];
       setStatus(msg);
       speak(msg);
@@ -76,10 +90,28 @@ export default function Capture({ go }: { go: (path: string) => void }) {
   return (
     <main className="capture">
       <video ref={video} className="capture-preview" autoPlay playsInline muted aria-hidden="true" />
-      <div className="capture-top">
-        <PageTitle>유물 촬영</PageTitle>
-        <div aria-live="polite">{status}</div>
-        <button aria-label="설정 바꾸기" onClick={() => go("/onboarding")}>설정 바꾸기</button>
+
+      <TopBar title="사유의 방" back="설정" onBack={() => go("/onboarding")} />
+
+      {camera === "on" && (
+        <div className="guide" aria-hidden="true">
+          <span className="guide-chip">{busy ? "인식 중…" : "가운데에 유물"}</span>
+          <i className="c tl" /><i className="c tr" /><i className="c bl" /><i className="c br" />
+        </div>
+      )}
+
+      <div className="capture-dock">
+        <div className="status-card" aria-live="polite">
+          <span className="status-icon" aria-hidden="true"><Icon name="info" size={22} /></span>
+          <span>{status}</span>
+        </div>
+        <p className="capture-note" aria-hidden="true">음성·진동으로 결과를 알려 드려요</p>
+
+        {camera === "on" && (
+          <button className="capture-shoot" aria-label="유물 촬영하기" onClick={shoot} disabled={busy}>
+            <span className="shutter" aria-hidden="true">{busy ? "확인 중" : ""}</span>
+          </button>
+        )}
         {camera === "off" && (
           <label className="upload">
             사진 올리기
@@ -96,11 +128,6 @@ export default function Capture({ go }: { go: (path: string) => void }) {
           </label>
         )}
       </div>
-      {camera === "on" && (
-        <button className="capture-shoot" aria-label="유물 촬영하기" onClick={shoot} disabled={busy}>
-          {busy ? "확인 중…" : "촬영"}
-        </button>
-      )}
     </main>
   );
 }
