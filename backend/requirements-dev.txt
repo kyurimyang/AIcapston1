@@ -1,0 +1,4 @@
+-r requirements.txt
+pytest
+httpx
+opencv-python-headless  # eval/make_synth_val.py, tests/test_synth_loo.py

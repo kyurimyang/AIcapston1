@@ -77,8 +77,13 @@ def health():
 
 
 @app.post("/recognize", response_model=RecognizeResponse)
-async def recognize_image(image: UploadFile = File(...)):
-    return recognize.recognize(await image.read())
+def recognize_image(image: UploadFile = File(...)):
+    # def(스레드풀)로 둬서 추론 중에도 이벤트 루프가 막히지 않게 한다
+    data = image.file.read(recognize.MAX_UPLOAD_BYTES + 1)
+    try:
+        return recognize.recognize(data)
+    except recognize.BadImage as e:
+        raise HTTPException(400, str(e))
 
 
 @app.get("/narration", response_model=NarrationResponse)

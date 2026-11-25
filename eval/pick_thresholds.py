@@ -37,14 +37,18 @@ def main(stage: int, write: bool, crop: bool) -> None:
     ck = str(ckpt) if ckpt.exists() else None
     with sqlite3.connect(DB_PATH) as con:
         gal = con.execute("SELECT artifact_id, path FROM artifact_images WHERE split='gallery'").fetchall()
-        val = con.execute("SELECT path FROM artifact_images WHERE split='val'").fetchall()
+        val = con.execute("SELECT artifact_id, path FROM artifact_images WHERE split='val'").fetchall()
     g_ids = np.array([a for a, _ in gal])
+    # val 유물이 gallery에 추가되면(add_artifact.py) 그 사진은 음성이 아니라 양성이므로 음성에서 뺀다
+    val = [(p,) for a, p in val if a not in set(g_ids)]
     g_imgs = [load_image(DATA / p) for _, p in gal]
     G = embed(g_imgs, ckpt=ck)  # gallery(인덱스) 쪽은 항상 원본
     scales = CROP_SCALES if crop else (1.0,)
 
     def sims(images):
         """질의마다 gallery와의 유사도. 크롭이 여러 개면 gallery 이미지별로 최고값 (= recognize.merge와 같은 결과)."""
+        if not images:
+            return np.zeros((0, len(g_ids)), "float32")
         E = embed([center_crop(im, s) for im in images for s in scales], ckpt=ck)
         return (E @ G.T).reshape(len(images), len(scales), -1).max(axis=1)
 
@@ -72,12 +76,15 @@ def main(stage: int, write: bool, crop: bool) -> None:
             out.append((r[0][1], r[0][1] - r[1][1]))
         return np.array(out)
 
-    nn, nv = neg(SN), neg(SV)
+    nn = neg(SN)
+    nv = neg(SV) if len(SV) else nn  # val 음성이 하나도 없으면 none_val만으로 정한다
     pos_top, pos_gap, pos_ok = np.array(pos_top), np.array(pos_gap), np.array(pos_ok)
     pct = lambda x, p: float(np.percentile(x, p))
     print(f"== stage{stage}{' · 다중 크롭 ' + str(scales) if crop else ''} ==")
     print(f"양성(LOO) {len(pos_top)}장, Top-1 {pos_ok.mean():.1%}, 점수 5%={pct(pos_top,5):.3f} 중앙={pct(pos_top,50):.3f}")
     print(f"음성 none_val {len(nn)}장: 최고 점수 max={nn[:,0].max():.3f} 중앙={np.median(nn[:,0]):.3f}")
+    if not len(SV):
+        print("[주의] gallery에 없는 val 유물이 없어 음성은 none_val뿐이에요")
     print(f"음성 val {len(nv)}장: 최고 점수 max={nv[:,0].max():.3f} 95%={pct(nv[:,0],95):.3f} 중앙={np.median(nv[:,0]):.3f}")
 
     neg_max = max(nn[:, 0].max(), pct(nv[:, 0], 95))
