@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useApp } from "./AppContext";
 import Ask from "./pages/Ask";
 import Capture from "./pages/Capture";
 import Narration from "./pages/Narration";
@@ -9,7 +8,6 @@ import Onboarding from "./pages/Onboarding";
 const current = () => window.location.hash.slice(1) || "/";
 
 export default function App() {
-  const { settings } = useApp();
   const [path, setPath] = useState(current());
 
   useEffect(() => {
@@ -20,8 +18,8 @@ export default function App() {
 
   const go = (p: string) => { window.location.hash = p; };
 
-  // 저장된 프로필이 있으면 온보딩을 건너뛴다
-  if (path === "/") return <Redirect to={settings ? "/capture" : "/onboarding"} go={go} />;
+  // 앱을 열면 항상 설정(온보딩)부터. 저장된 설정이 있으면 그 값이 미리 선택돼 있어 "시작하기"만 누르면 된다
+  if (path === "/") return <Redirect to="/onboarding" go={go} />;
   if (path === "/onboarding") return <Onboarding go={go} />;
   if (path === "/capture") return <Capture go={go} />;
   if (path === "/narration") return <Narration go={go} />;
