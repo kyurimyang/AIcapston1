@@ -143,7 +143,7 @@ fieldset.choices legend { padding: 0; margin-bottom: 8px; font-size: 17px; font-
 .capture-preview { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .capture .topbar { position: relative; padding: 8px var(--space); background: linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0)); }
 
-.guide { position: absolute; left: 14%; right: 14%; top: 14%; height: 40%; pointer-events: none; }
+.guide { position: absolute; left: 14%; right: 14%; top: 13%; height: 29%; pointer-events: none; }
 .guide .c { position: absolute; width: 36px; height: 36px; border: 4px solid #5fe0c8; }
 .guide .tl { top: 0; left: 0; border-right: 0; border-bottom: 0; border-radius: 12px 0 0 0; }
 .guide .tr { top: 0; right: 0; border-left: 0; border-bottom: 0; border-radius: 0 12px 0 0; }

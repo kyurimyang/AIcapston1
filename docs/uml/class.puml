@@ -1,0 +1,252 @@
+@startuml class
+' 유담 YU:DAM 클래스 다이어그램 (class.svg / class.png와 같은 내용)
+' 렌더링: https://www.plantuml.com/plantuml 또는 VS Code PlantUML 확장
+' 함수 모듈(recognize.py, rag.py, api.ts, speech.ts)은 <<module>>로 표시했다
+skinparam classAttributeIconSize 0
+skinparam class {
+  BackgroundColor #FFF8E6
+  BorderColor #333
+}
+skinparam package {
+  BackgroundColor #FAFAFA
+}
+hide empty members
+left to right direction
+
+' ================= 프론트엔드 =================
+package "frontend (React + Vite)" {
+  enum Profile <<enumeration>> {
+    congenital
+    acquired
+    low_vision
+  }
+  enum Length <<enumeration>> {
+    short
+    long
+  }
+
+  class Settings {
+    +profile : Profile
+    +length : Length
+  }
+
+  class AppContext <<context>> {
+    +settings : Settings | null
+    +result : RecognizeResult | null
+    +photo : string | null
+    +saveSettings(s : Settings) : void
+    +setResult(r : RecognizeResult | null) : void
+    +setPhoto(blob : Blob) : void
+    -- localStorage "yudam.settings" --
+  }
+
+  class App <<router>> {
+    -path : string
+    +go(path : string) : void
+  }
+
+  class OnboardingPage <<page /onboarding>> {
+    -profile : Profile
+    -length : Length
+    +save() : void
+  }
+  class CapturePage <<page /capture>> {
+    -camera : string
+    -busy : boolean
+    -status : string
+    +shoot() : void
+    -videoUrl : string | null
+    +open(file : File) : void
+  }
+  class NarrationPage <<page /narration>> {
+    -text : string
+    -rate : number
+    +replay() : void
+    +changeRate(rate : number) : void
+  }
+  class AskPage <<page /ask>> {
+    -question : string
+    -answer : string
+    -sources : string[]
+    -typing : boolean
+    +listenAndAsk() : void
+    +submitText() : void
+  }
+
+  class ApiClient <<module api.ts>> {
+    -BASE : string = VITE_API_BASE_URL | "/api"
+    -request<T>(path, init, timeoutMs) : Promise<T>
+    +recognize(image : Blob) : RecognizeResult
+    +getNarration(id, profile, length) : NarrationResponse
+    +ask(id, profile, question) : AskResponse
+  }
+  note bottom of ApiClient : 타임아웃 5초, 실패 시 1회 재시도\n/ask는 15초, 재시도 없음
+
+  class Speech <<module speech.ts>> {
+    +RATES : 0.8 | 1.0 | 1.3
+    +speak(text : string) : Promise<void>
+    +listen() : Promise<string>
+    +canListen() : boolean
+    +getRate() / setRate(rate)
+  }
+  class ImageUtil <<module image.ts>> {
+    -MAX_SIDE : int = 768
+    +captureFrame(video) : Blob
+    +resizeFile(file) : Blob
+  }
+}
+
+' ================= 백엔드 =================
+package "backend (FastAPI)" {
+  class MainApp <<FastAPI main.py>> {
+    +GET /health()
+    +POST /recognize(image : UploadFile) : RecognizeResponse
+    +GET /narration(artifact_id, profile, length) : NarrationResponse
+    +POST /ask(req : AskRequest) : AskResponse
+  }
+
+  class RecognizeResult <<DTO>> {
+    +status : "ok" | "uncertain" | "reject"
+    +artifact_id : str
+    +name : str
+    +score : float
+    +message : str
+  }
+  class NarrationResponse <<DTO>> {
+    +text : str
+    +reviewed : bool
+  }
+  class AskRequest <<DTO>> {
+    +artifact_id : str
+    +profile : Profile
+    +question : str
+  }
+  class AskResponse <<DTO>> {
+    +answer : str
+    +sources : list[str]
+    +grounded : bool
+  }
+
+  class Recognizer <<module recognize.py>> {
+    -STAGE : int = 2
+    {field} -CROP_SCALES = (1.0, 0.6, 0.4)
+    -T : float
+    -M : float
+    +warmup() : dict
+    +recognize(image_bytes) : dict
+    +embed(images, ckpt) : ndarray
+    +search(index, ids, vec) : list
+    +rank_multicrop(index, ids, im, ckpt) : list
+    +judge(ranked, T, M) : str
+  }
+  note bottom of Recognizer : ok: score ≥ T 그리고 1위−2위 ≥ M\nuncertain: score ≥ T, 1·2위 비슷\nreject: score < T
+
+  class RagAnswerer <<module rag.py>> {
+    -REFUSAL = "자료에 없는 내용이에요"
+    -PROFILE_STYLE : dict
+    +answer(artifact_id, profile, question) : dict
+    +build_paragraphs(art) : list[str]
+    +build_prompt(paras, profile, question)
+    +call_llm(system, user) : str
+    +parse_reply(raw, n_paras) : dict
+  }
+}
+
+' ================= 데이터·모델 =================
+package "data / models" {
+  class Artifact <<table artifacts>> {
+    +id : str  [PK]
+    +name : str
+    +era : str
+    +material : str
+    +size : str
+    +description : str
+    +source_url : str
+    +license : str
+  }
+  class ArtifactImage <<table artifact_images>> {
+    +artifact_id : str [FK]
+    +path : str
+    +source : str
+    +split : train | val | gallery
+  }
+  class Narration <<narrations.json>> {
+    +artifact_id : str [FK]
+    +profile : Profile
+    +length : Length
+    +text : str
+    +reviewed : bool
+  }
+  class TestImage <<table test_images>> {
+    +path : str [PK]
+    +label : A | B | AB | none
+    +condition : str
+    +note : str
+  }
+  class FaissIndex <<file index_stageN.faiss>> {
+    +vectors : float32[n×512]
+    +ids : index_stageN_ids.json
+  }
+  class Checkpoint <<file ckpt_stageN.pt>>
+  class Thresholds <<file thresholds_stageN_crop.json>> {
+    +T : float
+    +M : float
+  }
+}
+
+class CLIPModel <<external open_clip>> {
+  ViT-B-16-quickgelu (openai)
+  +encode_image(x) : Tensor
+}
+class LLMService <<external>> {
+  openai | anthropic | gemini
+}
+
+' ---------- 관계 ----------
+Settings --> Profile
+Settings --> Length
+AppContext *-- "0..1" Settings
+AppContext o-- "0..1" RecognizeResult
+
+App *-- OnboardingPage
+App *-- CapturePage
+App *-- NarrationPage
+App *-- AskPage
+App ..> AppContext : provides
+
+OnboardingPage ..> AppContext
+CapturePage ..> AppContext
+NarrationPage ..> AppContext
+AskPage ..> AppContext
+
+CapturePage ..> ImageUtil
+CapturePage ..> ApiClient
+NarrationPage ..> ApiClient
+AskPage ..> ApiClient
+OnboardingPage ..> Speech
+CapturePage ..> Speech
+NarrationPage ..> Speech
+AskPage ..> Speech
+
+ApiClient ..> MainApp : HTTPS (ngrok)
+
+MainApp ..> Recognizer
+MainApp ..> RagAnswerer
+MainApp ..> Narration : reviewed=true만
+MainApp ..> RecognizeResult
+MainApp ..> NarrationResponse
+MainApp ..> AskRequest
+MainApp ..> AskResponse
+
+Recognizer --> CLIPModel
+Recognizer --> FaissIndex
+Recognizer --> "0..1" Checkpoint
+Recognizer --> Thresholds
+Recognizer ..> Artifact : name 조회
+RagAnswerer ..> Artifact : description = 근거
+RagAnswerer --> LLMService
+
+Artifact "1" *-- "*" ArtifactImage
+Artifact "1" *-- "0..6" Narration : 3프로필 × 2길이
+FaissIndex ..> ArtifactImage : split=gallery로 구축
+@enduml
