@@ -62,18 +62,9 @@
 <line x1="1268" y1="900" x2="981.1" y2="840.8" stroke="#333" stroke-width="1.4"/>
 <line x1="1268" y1="900" x2="981.1" y2="959.2" stroke="#333" stroke-width="1.4"/>
 <line x1="591.8" y1="270.4" x2="698.2" y2="279.6" stroke="#555" stroke-width="1.4" stroke-dasharray="7 5" marker-end="url(#open)"/>
-<text x="645.0" y="265.0" font-size="14" text-anchor="middle" font-weight="normal" fill="#444">«include»</text>
 <line x1="723.0" y1="202.2" x2="567.0" y2="237.8" stroke="#555" stroke-width="1.4" stroke-dasharray="7 5" marker-end="url(#open)"/>
-<text x="615.0" y="186.0" font-size="14" text-anchor="middle" font-weight="normal" fill="#444">«extend»</text>
-<text x="615.0" y="204.0" font-size="13" text-anchor="middle" font-weight="normal" fill="#666">[카메라 사용 불가]</text>
 <line x1="820.0" y1="356.0" x2="820.0" y2="324.0" stroke="#555" stroke-width="1.4" stroke-dasharray="7 5" marker-end="url(#open)"/>
-<text x="890.0" y="336.0" font-size="14" text-anchor="middle" font-weight="normal" fill="#444">«extend»</text>
-<text x="890.0" y="354.0" font-size="13" text-anchor="middle" font-weight="normal" fill="#666">[확신 낮음·유물 없음]</text>
 <line x1="694.9" y1="482.8" x2="595.1" y2="477.2" stroke="#555" stroke-width="1.4" stroke-dasharray="7 5" marker-end="url(#open)"/>
-<text x="645.0" y="470.0" font-size="14" text-anchor="middle" font-weight="normal" fill="#444">«extend»</text>
 <line x1="597.3" y1="616.4" x2="692.7" y2="613.6" stroke="#555" stroke-width="1.4" stroke-dasharray="7 5" marker-end="url(#open)"/>
-<text x="645.0" y="605.0" font-size="14" text-anchor="middle" font-weight="normal" fill="#444">«include»</text>
 <line x1="723.0" y1="677.8" x2="567.0" y2="642.2" stroke="#555" stroke-width="1.4" stroke-dasharray="7 5" marker-end="url(#open)"/>
-<text x="605.0" y="690.0" font-size="14" text-anchor="middle" font-weight="normal" fill="#444">«extend»</text>
-<text x="605.0" y="708.0" font-size="13" text-anchor="middle" font-weight="normal" fill="#666">[음성 인식 불가]</text>
 </svg>

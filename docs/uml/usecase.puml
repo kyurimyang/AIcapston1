@@ -38,12 +38,12 @@ Visitor -- UC_Shoot
 Visitor -- UC_Narr
 Visitor -- UC_Ask
 
-UC_Shoot ..> UC_Identify : <<include>>
-UC_Upload ..> UC_Shoot : <<extend>>\n[카메라 사용 불가]
-UC_Retake ..> UC_Identify : <<extend>>\n[확신 낮음·유물 없음]
-UC_Speed ..> UC_Narr : <<extend>>
-UC_Ask ..> UC_Answer : <<include>>
-UC_Text ..> UC_Ask : <<extend>>\n[음성 인식 불가]
+UC_Shoot ..> UC_Identify
+UC_Upload ..> UC_Shoot
+UC_Retake ..> UC_Identify
+UC_Speed ..> UC_Narr
+UC_Ask ..> UC_Answer
+UC_Text ..> UC_Ask
 
 UC_Answer -- LLM
 UC_Review -- LLM
