@@ -5,7 +5,7 @@ import { Icon } from "../components/Icon";
 import { TopBar } from "../components/TopBar";
 import { bundledNarration } from "../offline";
 import { lengthOf, profileOf, tagsFor } from "../profiles";
-import { getRate, RATES, setRate, speak } from "../speech";
+import { getRate, RATES, setRate, speak, stopSpeaking } from "../speech";
 
 // 해설이 끝나면 다음 행동을 알려 준다. 다른 불상으로 잘못 인식됐을 때 되돌릴 길이기도 하다.
 const AFTER = "다른 불상이면 다시 찍기를, 궁금한 점이 있으면 질문하기를 눌러 주세요";
@@ -44,7 +44,7 @@ export default function Narration({ go }: { go: (path: string) => void }) {
 
   const stop = () => {
     run.current++;
-    speechSynthesis.cancel();
+    stopSpeaking();
     setPlaying(false);
   };
 

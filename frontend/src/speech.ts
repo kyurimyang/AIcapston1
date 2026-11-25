@@ -16,15 +16,35 @@ export function setRate(rate: number) {
 }
 
 /** 읽기가 끝나면(또는 취소·오류 시) resolve된다. 기다릴 필요가 없으면 결과를 무시하면 된다. */
+// 크롬은 cancel() 직후 같은 순간에 speak()하면 새 음성을 버리거나, 일시정지 상태로 굳어 아무 소리도 안 나는 경우가 있다.
+// 그래서 cancel 뒤 잠깐 쉬고, resume()으로 굳은 상태를 풀어 준 뒤 말한다.
+const GAP_MS = 60;
+let latest = 0;
+
+/** 지금 읽는 음성과 곧 읽으려던 음성을 모두 멈춘다 (일시정지) */
+export function stopSpeaking() {
+  latest++;
+  speechSynthesis.cancel();
+}
+
 export function speak(text: string, rate = getRate()): Promise<void> {
+  const id = ++latest;
   speechSynthesis.cancel();
   return new Promise((resolve) => {
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = "ko-KR";
-    u.rate = rate;
-    u.onend = () => resolve();
-    u.onerror = () => resolve();
-    speechSynthesis.speak(u);
+    setTimeout(() => {
+      if (id !== latest) return resolve(); // 그 사이에 다른 음성이 요청됐다
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = "ko-KR";
+      u.rate = rate;
+      u.onend = () => resolve();
+      u.onerror = (e) => {
+        // not-allowed: 페이지를 새로 연 뒤 아직 화면을 한 번도 누르지 않아 크롬이 막은 것
+        if (e.error !== "interrupted" && e.error !== "canceled") console.warn("[tts]", e.error, text.slice(0, 20));
+        resolve();
+      };
+      speechSynthesis.resume();
+      speechSynthesis.speak(u);
+    }, GAP_MS);
   });
 }
 
@@ -52,7 +72,7 @@ export const canListen = () => recognitionCtor() !== undefined;
 export function listen(): Promise<string> {
   const Ctor = recognitionCtor();
   if (!Ctor) return Promise.reject(new Error("음성 인식을 지원하지 않는 브라우저"));
-  speechSynthesis.cancel(); // TTS 소리가 마이크로 들어가지 않게
+  stopSpeaking(); // TTS 소리가 마이크로 들어가지 않게
   return new Promise((resolve, reject) => {
     const r = new Ctor();
     r.lang = "ko-KR";
