@@ -8,6 +8,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     allowedHosts: true, // ngrok 주소로 들어오는 요청 허용
+    fs: { allow: [".."] }, // 해설 폴백: ../backend/scripts/narrations.json을 함께 묶는다 (src/offline.ts)
     proxy: {
       "/api": {
         target: "http://localhost:8000",
