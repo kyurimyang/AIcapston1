@@ -162,6 +162,10 @@ export default function Ask({ go }: { go: (path: string) => void }) {
         ) : (
           <button className="link" onClick={() => setTyping(true)}>글로 질문하기</button>
         )}
+        <div className="row dock-nav">
+          <button className="secondary" aria-label="해설 다시 듣기" onClick={() => go("/narration")}>해설 다시 듣기</button>
+          <button className="secondary" aria-label="다른 유물 찍기" onClick={() => go("/capture")}>다시 찍기</button>
+        </div>
       </div>
     </main>
   );

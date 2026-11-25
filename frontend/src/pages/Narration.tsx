@@ -126,6 +126,8 @@ export default function Narration({ go }: { go: (path: string) => void }) {
           : text || "해설을 불러오고 있어요"}
       </div>
 
+      {/* 아래쪽 고정: 본문이 길어도 재생·피드백·질문하기 버튼이 항상 화면에 보인다 */}
+      <div className="narration-dock">
       <div className="player">
         <button className="play" aria-label={playing ? "일시정지" : "재생"} onClick={toggle} disabled={!total}>
           <Icon name={playing ? "pause" : "play"} size={30} />
@@ -149,7 +151,14 @@ export default function Narration({ go }: { go: (path: string) => void }) {
         </button>
       </div>
 
-      <button className="primary-wide" onClick={() => go("/ask")}>질문하기</button>
+      {/* 해설을 들은 뒤 이 유물에 대해 바로 질문 (슬라이드 ④) */}
+      <div className="row">
+        <button className="primary-wide" aria-label={`${result.name ?? "이 유물"}에 대해 질문하기`} onClick={() => go("/ask")}>
+          <Icon name="mic" size={22} /> 질문하기
+        </button>
+        <button className="secondary next-shot" aria-label="다른 유물 찍기" onClick={() => go("/capture")}>다시 찍기</button>
+      </div>
+      </div>
     </main>
   );
 }

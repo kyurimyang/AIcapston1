@@ -3,7 +3,7 @@ import { recognize } from "../api";
 import { useApp } from "../AppContext";
 import { Icon } from "../components/Icon";
 import { TopBar } from "../components/TopBar";
-import { captureFrame, resizeFile } from "../image";
+import { captureFrame, fromFile } from "../image";
 import { speak } from "../speech";
 
 // 서버 message가 없을 때의 대체 문구. 화면을 못 봐도 따라 할 수 있는 몸의 동작으로 안내한다
@@ -33,8 +33,8 @@ export default function Capture({ go }: { go: (path: string) => void }) {
     let cancelled = false;
     const noCamera = () => {
       setCamera("off");
-      setStatus("카메라를 쓸 수 없어요. 사진 올리기를 눌러 주세요");
-      speak("카메라를 쓸 수 없어요. 사진 올리기 버튼을 눌러 주세요");
+      setStatus("카메라를 쓸 수 없어요. 사진·영상 올리기를 눌러 주세요");
+      speak("카메라를 쓸 수 없어요. 사진·영상 올리기 버튼을 눌러 주세요");
     };
     // HTTPS가 아니면(ngrok 없이 접속) mediaDevices 자체가 없다
     if (!navigator.mediaDevices?.getUserMedia) noCamera();
@@ -112,21 +112,19 @@ export default function Capture({ go }: { go: (path: string) => void }) {
             <span className="shutter" aria-hidden="true">{busy ? "확인 중" : ""}</span>
           </button>
         )}
-        {camera === "off" && (
-          <label className="upload">
-            사진 올리기
-            <input
-              type="file"
-              accept="image/*"
-              capture="environment"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                e.target.value = ""; // 같은 사진을 다시 골라도 onChange가 오게
-                if (f) send(() => resizeFile(f));
-              }}
-            />
-          </label>
-        )}
+        {/* 사진·영상 첨부: 카메라가 있어도 항상 둔다 (갤러리에서 고르기). 영상은 가운데 장면 한 장으로 인식 */}
+        <label className={camera === "off" ? "upload" : "upload upload-secondary"}>
+          사진·영상 올리기
+          <input
+            type="file"
+            accept="image/*,video/*"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              e.target.value = ""; // 같은 파일을 다시 골라도 onChange가 오게
+              if (f) send(() => fromFile(f));
+            }}
+          />
+        </label>
       </div>
     </main>
   );
