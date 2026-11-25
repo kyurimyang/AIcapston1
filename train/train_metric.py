@@ -8,7 +8,14 @@
   data/test와 data/gallery는 읽지 않는다.
 - 결과: models/ckpt_stage{N}.pt (전체 state_dict, backend/app/recognize.py가 그대로 읽는다)
 - 헷갈리는 쌍(hard negative)은 --hard-pairs CSV(컬럼 a,b = 유물 ID)로 준다.
-  이 쌍은 한 배치에 함께 들어가 서로 negative가 된다. gallery 유물 ID는 쓸 수 없다.
+  이 쌍은 한 배치에 함께 들어가 서로 negative가 된다.
+
+④ = ② 설정 그대로 + A/B gallery 사진을 학습에 추가 + A01↔B01 hard negative (2026-11-16)
+  python train/train_metric.py --stage 4 --manifest train/manifest.csv --data-root data \
+      --gallery-ids A01,B01 --hard-pairs train/hard_pairs_ab.csv
+- 원칙상 gallery는 학습에 쓰지 않지만, A·B는 K-Art train에 없어 두 상의 차이를 배울 사진이
+  gallery뿐이다. --gallery-ids로 명시한 유물만 예외로 허용한다. test는 계속 금지.
+- A·B는 val이 없으므로 설정을 val로 고를 수 없다. ②와 같은 설정으로 한 번만 학습한다.
 """
 import argparse
 import csv
@@ -37,6 +44,26 @@ def load_manifest(path: str, data_root: Path):
             if r["split"] in by_split:
                 by_split[r["split"]][r["artifact_id"]].append(data_root / p)
     return by_split["train"], by_split["val"]
+
+
+def load_gallery(ids: list[str], data_root: Path) -> dict[str, list[Path]]:
+    """--gallery-ids로 명시한 유물의 gallery 사진만 읽는다 (④ 전용 예외)."""
+    import sqlite3
+
+    with sqlite3.connect(data_root / "artifacts.db") as con:
+        rows = con.execute(
+            f"SELECT artifact_id, path FROM artifact_images WHERE split='gallery' "
+            f"AND artifact_id IN ({','.join('?' * len(ids))})", ids,
+        ).fetchall()
+    groups: dict[str, list[Path]] = defaultdict(list)
+    for aid, p in rows:
+        if not p.startswith("gallery/"):
+            raise ValueError(f"gallery가 아닌 경로: {p}")
+        groups[aid].append(data_root / p)
+    missing = set(ids) - set(groups)
+    if missing:
+        raise ValueError(f"gallery 사진이 없는 유물: {sorted(missing)}")
+    return groups
 
 
 def build_augment():
@@ -133,11 +160,12 @@ def val_top1(model, preprocess, val, device) -> float:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--stage", type=int, required=True, choices=[2, 3])
+    ap.add_argument("--stage", type=int, required=True, choices=[2, 3, 4])
     ap.add_argument("--manifest", required=True)
     ap.add_argument("--data-root", default="data")
     ap.add_argument("--out-dir", default="models")
     ap.add_argument("--hard-pairs", default=None)
+    ap.add_argument("--gallery-ids", default=None, help="④ 전용: 학습에 넣을 gallery 유물 ID (쉼표 구분)")
     ap.add_argument("--blocks", type=int, default=4, help="마지막 몇 개 블록을 학습할지 (2~4)")
     ap.add_argument("--P", type=int, default=16)
     ap.add_argument("--K", type=int, default=4)
@@ -150,6 +178,15 @@ def main():
     random.seed(a.seed); np.random.seed(a.seed); torch.manual_seed(a.seed)
     device = "cuda" if torch.cuda.is_available() else "cpu"
     train, val = load_manifest(a.manifest, Path(a.data_root))
+    if a.gallery_ids:
+        if a.stage != 4:
+            raise ValueError("--gallery-ids는 --stage 4에서만 쓴다")
+        extra = load_gallery(a.gallery_ids.split(","), Path(a.data_root))
+        overlap = set(extra) & (set(train) | set(val))
+        if overlap:
+            raise ValueError(f"train/val과 겹치는 유물: {sorted(overlap)}")
+        train.update(extra)
+        print("gallery에서 추가: " + ", ".join(f"{k} {len(v)}장" for k, v in extra.items()))
     print(f"stage{a.stage} device={device} train 유물 {len(train)}점 / val 유물 {len(val)}점")
 
     pairs = []
