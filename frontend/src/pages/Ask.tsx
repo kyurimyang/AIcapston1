@@ -38,7 +38,10 @@ export default function Ask({ go }: { go: (path: string) => void }) {
     speak(faqs.length ? `${how}. 자주 묻는 질문도 있어요` : how);
   }, []);
 
-  useEffect(() => end.current?.scrollIntoView({ block: "end" }), [turns, phase]);
+  // 중괄호를 빼면 안 된다: 최신 크롬은 scrollIntoView가 Promise를 돌려줘서, effect가 반환하면 화면이 죽는다
+  useEffect(() => {
+    end.current?.scrollIntoView({ block: "end" });
+  }, [turns, phase]);
 
   const last = turns[turns.length - 1];
 
