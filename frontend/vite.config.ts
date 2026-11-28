@@ -4,6 +4,7 @@ import react from "@vitejs/plugin-react";
 // 시연: `ngrok http 5173` 하나로 화면과 API를 모두 HTTPS로 연다.
 // 폰은 화면을 ngrok 주소로 열고, /api 요청은 이 서버가 노트북의 백엔드(8000)로 넘긴다.
 // (카메라는 HTTPS 페이지에서만 켜지고, HTTPS 페이지는 http API를 부를 수 없다)
+// 밖에 열 때는 `npm run preview`를 쓴다 (아래 server의 proxy·allowedHosts를 물려받는다). 개발 서버는 프로젝트 파일이 노출된다.
 export default defineConfig({
   plugins: [react()],
   server: {

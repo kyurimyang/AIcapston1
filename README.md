@@ -31,7 +31,19 @@ npm install
 npm run dev
 ```
 
-시연 (폰): 백엔드(8000)와 프론트(`npm run dev`, 5173)를 켠 뒤 **`ngrok http 5173` 하나만** 연다. 폰 크롬에서 ngrok이 준 `https://…` 주소를 열면 된다.
+시연 (폰): 백엔드(8000)를 켜고, 프론트는 **빌드해서 `preview`로** 연 뒤, **`ngrok http 5173` 하나만** 연다. 폰 크롬에서 ngrok이 준 `https://…` 주소를 열면 된다.
+
+```bash
+# frontend/ 에서
+npm run build
+npm run preview -- --port 5173 --strictPort
+
+# 다른 터미널에서
+ngrok http 5173
+```
+
+- **`npm run dev`(개발 서버)는 ngrok으로 열지 않는다.** 링크를 아는 사람이 `data/`처럼 git에 없는 프로젝트 파일까지 받아 갈 수 있다. `preview`는 빌드한 화면만 보여 준다.
+- `preview`는 빌드한 시점의 화면이다. 코드를 고치면 다시 빌드한다.
 - 카메라는 HTTPS 페이지에서만 켜진다. 그래서 백엔드가 아니라 프론트를 ngrok으로 연다.
 - API는 프론트 서버가 `/api` → `localhost:8000`으로 넘긴다 (`frontend/vite.config.ts`). ngrok 주소가 바뀌어도 설정을 고칠 필요가 없다.
 - `frontend/.env`의 `VITE_API_BASE_URL`은 비워 둔다 (백엔드를 다른 곳에서 따로 열 때만 쓴다).
